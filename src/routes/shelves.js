@@ -15,7 +15,7 @@ router.get('/:id', shelfController.getShelfById);
 // Route to create a new shelf
 // This route handles POST requests to the base URL ('/shelves') and expects the new shelf data to be provided in the request body.
 // The shelfController.createShelf method is called to create and save the new shelf in the database.
-router.post('/', shelfController.createShelf);
+router.post('/', passport.authenticate('jwt', { session: false }), shelfController.createShelf);
 
 // Route to update an existing shelf by its ID
 // This route handles PUT requests to '/shelves/:id' where ':id' represents the ID of the shelf to be updated.

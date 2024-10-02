@@ -1,10 +1,15 @@
 const express = require('express'); // Import Express to create the router
 const router = express.Router(); // Create a new Express router instance
 const bookController = require('../controllers/bookController'); // Import the book controller which contains the logic for each route
+const { check } = require('express-validator'); // Import validation middleware
 
 // Route to fetch all books
 // This route will call the `getAllBooks` method in the book controller and return all books in the system.
-router.get('/', bookController.getAllBooks);
+router.post('/', [
+    check('title').notEmpty().withMessage('Title is required'),
+    check('authors').isArray({ min: 1 }).withMessage('At least one author is required'),
+    // ... other validation rules ...
+], bookController.createBook); 
 
 // Route to fetch books by shelf ID
 // This route will call the `getBooksByShelf` method in the book controller.

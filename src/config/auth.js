@@ -37,4 +37,3 @@ passport.use(new JwtStrategy(opts, async (jwt_payload, done) => {
 
 // Export the configured Passport module to be used in other parts of the app
 module.exports = passport;
-

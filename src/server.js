@@ -1,8 +1,8 @@
-const app = require('./app');  // Import the Express app configuration
-const connectDB = require('./config/database');  // Import the database connection utility
-const logger = require('./utils/logger');  // Import custom logger
+const app = require("./app"); // Import the Express app configuration
+const connectDB = require("./config/database"); // Import the database connection utility
+const logger = require("./utils/logger"); // Import custom logger
 
-const PORT = process.env.PORT || 5000;  // Use port from environment or default to 5000
+const PORT = process.env.PORT || 5000; // Use port from environment or default to 5000
 
 /**
  * Start the server after successfully connecting to the database.
@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 5000;  // Use port from environment or default 
  */
 const startServer = async () => {
   try {
-    await connectDB();  // Connect to MongoDB
+    await connectDB(); // Connect to MongoDB
 
     // Start the Express server and listen on the defined port
     app.listen(PORT, () => {
@@ -18,8 +18,12 @@ const startServer = async () => {
     });
   } catch (err) {
     logger.error(`Error connecting to MongoDB: ${err.message}`);
-    process.exit(1);  // Exit the process with failure code if DB connection fails
+    process.exit(1); // Exit the process with failure code if DB connection fails
   }
 };
 
-startServer();  // Initialize the server
+if (process.env.NODE_ENV !== "production") {
+  logger.info(`Starting server in ${process.env.NODE_ENV} mode...`);
+}
+
+startServer(); // Initialize the server

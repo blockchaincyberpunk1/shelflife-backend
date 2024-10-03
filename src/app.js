@@ -1,50 +1,74 @@
-const express = require('express');
-const mongoose = require('mongoose');  // Import Mongoose for MongoDB interaction
-const bodyParser = require('body-parser');  // Middleware for parsing incoming request bodies
-const cors = require('cors');  // Enable Cross-Origin Resource Sharing
-const helmet = require('helmet');  // Add security headers
-const passport = require('passport');  // Import Passport for authentication
-const logger = require('./utils/logger');  // Import custom logger (e.g., Winston)
+const express = require('express'); // Import Express for building the web server
+const mongoose = require('mongoose'); // Import Mongoose for MongoDB interaction
+const bodyParser = require('body-parser'); // Middleware for parsing incoming JSON request bodies
+const cors = require('cors'); // Middleware to allow Cross-Origin Resource Sharing (for handling requests from different origins)
+const helmet = require('helmet'); // Middleware to set various HTTP headers for security
+const passport = require('passport'); // Import Passport for authentication strategies (JWT, etc.)
+const rateLimit = require('express-rate-limit'); // Import rate-limiting middleware to prevent abuse of API routes
+const logger = require('./utils/logger'); // Import custom logger (e.g., Winston) for logging system events
 
-// Import routes
-const bookRoutes = require('./routes/books');
-const shelfRoutes = require('./routes/shelves');
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');  // Include user routes
+// Import route files for different parts of the app
+const bookRoutes = require('./routes/books'); // Book-related routes
+const shelfRoutes = require('./routes/shelves'); // Shelf-related routes
+const authRoutes = require('./routes/auth'); // Authentication-related routes (login, signup)
+const userRoutes = require('./routes/users'); // User-related routes (profile, password management)
 
-const app = express();  // Initialize Express app
+// Initialize Express app
+const app = express(); 
 
 /** ------------------------
  *    MIDDLEWARE SETUP
  *  ------------------------ */
 
-// Set security-related HTTP headers using Helmet
+// Helmet: Secure the app by setting various HTTP headers
 app.use(helmet());
 
-// Parse incoming request bodies in JSON format
+// Body-parser: Parse incoming request bodies in JSON format (for easier handling of requests)
 app.use(bodyParser.json());
 
-// Enable CORS to allow requests from other domains
+// CORS: Allow requests from different domains (by default, browsers block requests from different origins)
 app.use(cors());
 
-// Initialize Passport for handling authentication strategies
+// Passport: Initialize Passport to handle authentication strategies (like JWT)
 app.use(passport.initialize());
+
+/** ------------------------
+ *    RATE LIMITING FOR SECURITY
+ *  ------------------------ */
+
+// Limit the number of requests to authentication routes (prevent abuse or brute-force attacks)
+// This allows 100 requests per IP every 15 minutes for /api/auth routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15-minute window
+  max: 100, // Limit each IP to 100 requests per window
+  message: 'Too many login attempts from this IP, please try again later.', // Message sent when rate limit is exceeded
+});
+
+// Apply the rate limiter only to authentication routes (signup, login)
+app.use('/api/auth', authLimiter); 
 
 /** ------------------------
  *    DATABASE CONNECTION
  *  ------------------------ */
-const connectDB = require('./config/database');
-connectDB();  // Establish connection to MongoDB
+
+const connectDB = require('./config/database'); // Import the MongoDB connection logic
+connectDB(); // Connect to the MongoDB database
 
 /** ------------------------
  *    ROUTE MOUNTING
  *  ------------------------ */
 
-// Mount route handlers for various endpoints
-app.use('/api/books', bookRoutes);  // Routes for book CRUD operations
-app.use('/api/shelves', shelfRoutes);  // Routes for shelf CRUD operations
-app.use('/api/auth', authRoutes);  // Routes for user authentication
-app.use('/api/users', userRoutes);  // Routes for user management (profile, password reset, etc.)
+// Mount the book-related routes to /api/books (handles CRUD operations for books)
+app.use('/api/books', bookRoutes);
+
+// Mount the shelf-related routes to /api/shelves (handles CRUD operations for shelves)
+app.use('/api/shelves', shelfRoutes);
+
+// Mount the authentication routes to /api/auth (handles user login, signup, etc.)
+app.use('/api/auth', authRoutes);
+
+// Mount the user-related routes to /api/users (handles user profile management, password updates, etc.)
+app.use('/api/users', userRoutes);
 
 /** ------------------------
  *    ERROR HANDLING
@@ -52,14 +76,26 @@ app.use('/api/users', userRoutes);  // Routes for user management (profile, pass
 
 // General error-handling middleware to capture all errors and return a response
 app.use((err, req, res, next) => {
-    logger.error(`Error: ${err.message}`, { stack: err.stack });  // Log error details with the stack trace
+  logger.error(`Error: ${err.message}`, { stack: err.stack });
 
-    res.status(err.status || 500).json({
-        message: err.message || 'Internal Server Error',  // Send error message
-    });
+  const statusCode = err.status || 500;
+
+  let message = err.message || "Internal Server Error";
+
+  // Hide stack traces in production
+  if (process.env.NODE_ENV === "production" && statusCode === 500) {
+    message = "Something went wrong. Please try again later.";
+  }
+
+  res.status(statusCode).json({
+    message,
+    ...(process.env.NODE_ENV !== "production" && { stack: err.stack }),
+  });
 });
 
 /** ------------------------
  *    EXPORT THE APP
  *  ------------------------ */
-module.exports = app;  // Export the configured Express app
+
+// Export the configured Express app so it can be imported and used in the server setup (server.js)
+module.exports = app;

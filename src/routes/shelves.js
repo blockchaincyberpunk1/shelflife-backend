@@ -1,30 +1,64 @@
-const express = require('express'); // Import Express to create a new router instance
-const router = express.Router(); // Create a new router instance using Express
-const shelfController = require('../controllers/shelfController'); // Import the shelf controller to handle the business logic
+const express = require('express');  // Import Express
+const router = express.Router();  // Create a new router object for handling shelf-related routes
+const shelfController = require('../controllers/shelfController');  // Import the shelfController
+const { authenticateJWT } = require('../middleware/authMiddleware');  // Import JWT authentication middleware to protect routes
+const { check } = require('express-validator');  // Import express-validator for input validation
+const { validate } = require('../middleware/validation');  // Import the validation middleware
 
-// Route to get all shelves
-// This route handles GET requests to the base URL ('/shelves') and calls the shelfController's getAllShelves method.
-// In future implementations, it could be filtered by user if user authentication is implemented.
-router.get('/', shelfController.getAllShelves);
+/**
+ * @route GET /shelves
+ * @description Get all shelves for the authenticated user
+ * @access Private
+ */
+router.get('/', authenticateJWT, shelfController.getAllShelves);  // Protect route with JWT authentication
 
-// Route to get a specific shelf by its ID
-// This route handles GET requests to '/shelves/:id', where ':id' is the dynamic ID of the shelf to be retrieved.
-// The shelfController.getShelfById method is called to return the shelf with the specified ID.
-router.get('/:id', shelfController.getShelfById);
+/**
+ * @route GET /shelves/:id
+ * @description Get a specific shelf by its ID
+ * @access Private
+ */
+router.get('/:id', authenticateJWT, shelfController.getShelfById);  // Protect route with JWT authentication
 
-// Route to create a new shelf
-// This route handles POST requests to the base URL ('/shelves') and expects the new shelf data to be provided in the request body.
-// The shelfController.createShelf method is called to create and save the new shelf in the database.
-router.post('/', passport.authenticate('jwt', { session: false }), shelfController.createShelf);
+/**
+ * @route POST /shelves
+ * @description Create a new shelf for the authenticated user
+ * @access Private
+ */
+router.post('/', 
+  authenticateJWT,  // Protect route with JWT authentication
+  [
+    check('name')
+      .notEmpty()
+      .withMessage('Shelf name is required'),  // Validate that the shelf name is provided
+    // Optionally, add other validation rules (e.g., for description, custom fields, etc.)
+  ],
+  validate,  // Use the validation middleware to handle validation errors
+  shelfController.createShelf  // Call the controller to create the shelf
+);
 
-// Route to update an existing shelf by its ID
-// This route handles PUT requests to '/shelves/:id' where ':id' represents the ID of the shelf to be updated.
-// The shelfController.updateShelf method is called, and the update data is expected to be provided in the request body.
-router.put('/:id', shelfController.updateShelf);
+/**
+ * @route PUT /shelves/:id
+ * @description Update an existing shelf by its ID
+ * @access Private
+ */
+router.put('/:id', 
+  authenticateJWT,  // Protect route with JWT authentication
+  [
+    check('name')
+      .optional()
+      .isLength({ min: 1 })
+      .withMessage('Shelf name must be at least 1 character long'),  // Validate the shelf name if provided
+    // Optionally, add other validation rules for fields being updated (e.g., custom fields, etc.)
+  ],
+  validate,  // Use the validation middleware to handle validation errors
+  shelfController.updateShelf  // Call the controller to update the shelf
+);
 
-// Route to delete a shelf by its ID
-// This route handles DELETE requests to '/shelves/:id', where ':id' is the ID of the shelf to be deleted.
-// The shelfController.deleteShelf method is called to remove the shelf from the database.
-router.delete('/:id', shelfController.deleteShelf);
+/**
+ * @route DELETE /shelves/:id
+ * @description Delete a shelf by its ID
+ * @access Private
+ */
+router.delete('/:id', authenticateJWT, shelfController.deleteShelf);  // Protect route with JWT authentication
 
-module.exports = router; // Export the router so it can be used in the main application
+module.exports = router;  // Export the router for use in the application

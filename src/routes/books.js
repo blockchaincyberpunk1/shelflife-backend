@@ -1,36 +1,63 @@
-const express = require('express'); // Import Express to create the router
-const router = express.Router(); // Create a new Express router instance
-const bookController = require('../controllers/bookController'); // Import the book controller which contains the logic for each route
-const { check } = require('express-validator'); // Import validation middleware
+const express = require('express');  // Import Express
+const router = express.Router();  // Create a new router object for handling book-related routes
+const bookController = require('../controllers/bookController');  // Import the bookController
+const { check } = require('express-validator');  // Import express-validator for input validation
+const { validate } = require('../middleware/validation');  // Import the validation middleware
+const { authenticateJWT } = require('../middleware/authMiddleware');  // Import authentication middleware to protect routes
 
-// Route to fetch all books
-// This route will call the `getAllBooks` method in the book controller and return all books in the system.
+/**
+ * @route GET /books
+ * @description Fetch all books
+ * @access Private
+ */
+router.get('/', authenticateJWT, bookController.getAllBooks);  // Protect route with authentication
+
+/**
+ * @route GET /books/shelf/:shelfId
+ * @description Fetch books by shelf ID
+ * @access Private
+ */
+router.get('/shelf/:shelfId', authenticateJWT, bookController.getBooksByShelf);  // Protect route with authentication
+
+/**
+ * @route PUT /books/:id
+ * @description Update a book's shelf association
+ * @access Private
+ */
+router.put('/:id', authenticateJWT, [
+  check('shelf')
+    .notEmpty()
+    .withMessage('Shelf ID is required'),  // Validate that a shelf ID is provided
+], validate, bookController.updateBookShelf);  // Protect route with authentication and validation
+
+/**
+ * @route POST /books
+ * @description Add a new book to the collection
+ * @access Private
+ */
 router.post('/', [
-    check('title').notEmpty().withMessage('Title is required'),
-    check('authors').isArray({ min: 1 }).withMessage('At least one author is required'),
-    // ... other validation rules ...
-], bookController.createBook); 
+  // Validate the title: it must be non-empty
+  check('title')
+    .notEmpty()
+    .withMessage('Title is required'),
 
-// Route to fetch books by shelf ID
-// This route will call the `getBooksByShelf` method in the book controller.
-// It takes a `shelfId` as a URL parameter and returns all books associated with that specific shelf.
-router.get('/shelf/:shelfId', bookController.getBooksByShelf);
+  // Validate the authors field: it must be an array and contain at least one author
+  check('authors')
+    .isArray({ min: 1 })
+    .withMessage('At least one author is required'),
 
-// Route to update a book's shelf
-// This route will call the `updateBookShelf` method in the book controller.
-// It takes a `bookId` from the URL and a `shelf` ID in the request body, then updates the book's shelf.
-router.put('/:id', bookController.updateBookShelf);
+  // Optionally, validate the coverImageUrl if it's provided
+  check('coverImageUrl')
+    .optional()
+    .isURL()
+    .withMessage('Invalid URL for cover image'),
+], validate, authenticateJWT, bookController.createBook);  // Protect route with authentication and validation
 
-// Route to add a new book
-// This route will call the `createBook` method in the book controller to add a new book to the system.
-// It expects book data to be provided in the request body (e.g., title, authors, etc.).
-router.post('/', bookController.createBook);
+/**
+ * @route GET /books/search
+ * @description Search for books by title or author
+ * @access Public
+ */
+router.get('/search', bookController.searchBooks);  // No authentication required for searching
 
-// Route to search for books by title or author
-// This route will call the `searchBooks` method in the book controller.
-// It uses a query parameter `q` (for search query) to search books by title or author and returns matching results.
-router.get('/search', bookController.searchBooks);
-
-// Export the router so it can be used in the application
-// This will make all the defined routes available to be used in the main app.
-module.exports = router;
+module.exports = router;  // Export the router for use in the application

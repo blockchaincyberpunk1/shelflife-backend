@@ -7,10 +7,10 @@ const Book = require('../models/Book');  // Import the Book model to interact wi
 exports.getAllBooks = async () => {
   try {
     // Fetch all books and populate the 'shelf' field with the corresponding shelf data
-    const books = await Book.find().populate('shelf');
-    return books;
+    const books = await Book.find().populate('shelf'); // Populate adds the related shelf data
+    return books; // Return the array of books
   } catch (err) {
-    // Log the error and throw it for handling by the caller (e.g., in the controller)
+    // Log the error and throw it for handling by the controller or caller
     logger.error(`Error fetching all books: ${err.message}`);
     throw new Error('Could not fetch books. Please try again later.');
   }
@@ -24,10 +24,10 @@ exports.getAllBooks = async () => {
 exports.getBooksByShelf = async (shelfId) => {
   try {
     // Fetch books where the 'shelf' field matches the provided shelfId
-    const books = await Book.find({ shelf: shelfId }).populate('shelf');
-    return books;
+    const books = await Book.find({ shelf: shelfId }).populate('shelf'); // Find books by shelf ID and populate the shelf field
+    return books; // Return the books on the specified shelf
   } catch (err) {
-    // Log the error and throw it for handling by the caller
+    // Log the error and throw it for handling by the controller or caller
     logger.error(`Error fetching books by shelf ID ${shelfId}: ${err.message}`);
     throw new Error('Could not fetch books for the specified shelf.');
   }
@@ -44,17 +44,17 @@ exports.updateBookShelf = async (bookId, newShelfId) => {
     // Find the book by its ID and update its 'shelf' field to the new shelf ID
     const updatedBook = await Book.findByIdAndUpdate(
       bookId,
-      { shelf: newShelfId },
-      { new: true }  // Return the updated document instead of the original
-    ).populate('shelf');
-    
+      { shelf: newShelfId }, // Update the shelf field with the new shelf ID
+      { new: true }  // Return the updated document instead of the original one
+    ).populate('shelf'); // Populate the shelf data
+
     if (!updatedBook) {
-      throw new Error('Book not found.');
+      throw new Error('Book not found.'); // If no book is found with the provided ID, throw an error
     }
 
-    return updatedBook;
+    return updatedBook; // Return the updated book document
   } catch (err) {
-    // Log the error and throw it for handling by the caller
+    // Log the error and throw it for handling by the controller or caller
     logger.error(`Error updating book shelf for book ID ${bookId}: ${err.message}`);
     throw new Error('Could not update the book shelf.');
   }
@@ -67,14 +67,14 @@ exports.updateBookShelf = async (bookId, newShelfId) => {
  */
 exports.createBook = async (bookData) => {
   try {
-    // Create a new book instance using the provided data
+    // Create a new book instance using the provided data (title, authors, etc.)
     const newBook = new Book(bookData);
     
-    // Save the book document to the database and return the result
+    // Save the book document to the database and return the newly created book
     await newBook.save();
     return newBook;
   } catch (err) {
-    // Log the error and throw it for handling by the caller
+    // Log the error and throw it for handling by the controller or caller
     logger.error(`Error creating new book: ${err.message}`);
     throw new Error('Could not create the book. Please try again.');
   }
@@ -89,19 +89,19 @@ exports.createBook = async (bookData) => {
 exports.searchBooks = async (query) => {
   try {
     // Create a case-insensitive regular expression based on the search query
-    const regex = new RegExp(query, 'i');  // 'i' makes it case-insensitive
+    const regex = new RegExp(query, 'i');  // 'i' flag makes the search case-insensitive
 
-    // Search for books where the title or any author matches the search query
+    // Search for books where the title or authors match the query
     const books = await Book.find({
       $or: [
         { title: { $regex: regex } },        // Match books by title
         { authors: { $in: [regex] } },       // Match any author (authors is an array)
       ],
-    }).populate('shelf');  // Populate 'shelf' field
+    }).populate('shelf');  // Populate the 'shelf' field to include shelf details
 
-    return books;
+    return books; // Return the array of books matching the search query
   } catch (err) {
-    // Log the error and throw it for handling by the caller
+    // Log the error and throw it for handling by the controller or caller
     logger.error(`Error searching books with query "${query}": ${err.message}`);
     throw new Error('Could not search for books. Please try again.');
   }

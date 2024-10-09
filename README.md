@@ -26,7 +26,7 @@ This repository contains the backend API for the ShelfLife application, a book t
 
 1. Clone the repository: 
    ```bash
-   git clone https://github.com/your-username/shelflife-backend.git 
+   git clone https://github.com/blockchaincyberpunk1/shelflife-backend.git 
    ```
 2. Navigate to the project directory: 
    ```bash

@@ -5,10 +5,12 @@ const { check } = require('express-validator');  // Import express-validator's `
 const { validate } = require('../middleware/validation');  // Import general validation middleware
 
 /**
- * User Signup Route
  * @route POST /signup
- * @description Allows new users to sign up by providing username, email, and password
+ * @description User signup route for registering new users
  * @access Public
+ * 
+ * This route allows a new user to sign up by providing necessary credentials like 
+ * username, email, and password. It also includes optional profile picture validation.
  */
 router.post(
   '/signup',
@@ -31,21 +33,23 @@ router.post(
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters long'),
 
-    // Optional profile picture validation: if provided, it must be a valid URL
+    // Optional: Validate the profile picture URL, if provided
     check('profilePicture')
       .optional()
       .isURL()
       .withMessage('Invalid profile picture URL'),
   ],
-  validate,  // Apply general validation middleware to handle any validation errors
+  validate,  // Apply validation middleware to check for errors
   authController.signup  // Call the signup function from the authController if validation passes
 );
 
 /**
- * User Login Route
  * @route POST /login
- * @description Allows users to log in by providing email and password
+ * @description User login route for authenticating users
  * @access Public
+ * 
+ * This route allows existing users to log in by providing valid email and password. 
+ * It validates both fields before calling the login handler.
  */
 router.post(
   '/login',
@@ -61,15 +65,8 @@ router.post(
       .exists()
       .withMessage('Password is required'),
   ],
-  validate,  // Apply general validation middleware to handle any validation errors
+  validate,  // Apply validation middleware to check for errors
   authController.login  // Call the login function from the authController if validation passes
 );
-
-/**
- * Optional Route: Refresh JWT Token
- * Implement token refreshing functionality
- * This would allow users to refresh their JWT tokens after expiration.
- */
-// router.post('/refresh-token', authController.refreshToken);
 
 module.exports = router;  // Export the router object to be used in other parts of the application

@@ -7,6 +7,9 @@ const logger = require("../utils/logger"); // Import Winston logger for logging
 /**
  * User Signup Controller
  * Handles the registration of new users
+ * @param {Object} req - The request object containing user data (username, email, password, profilePicture)
+ * @param {Object} res - The response object to send back to the client
+ * @param {Function} next - The next middleware function in the Express stack
  */
 exports.signup = async (req, res, next) => {
   try {
@@ -14,36 +17,37 @@ exports.signup = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       logger.warn("Signup validation failed", { errors: errors.array() }); // Log validation failures
-      return res.status(400).json({ errors: errors.array() }); // Return validation errors
+      return res.status(400).json({ errors: errors.array() }); // Return validation errors to the client
     }
 
     // 2. Extract necessary data from the request body
     const { username, email, password, profilePicture } = req.body;
 
     // 3. Call the signup service to create a new user
-    const newUser = await authService.signup(
-      username,
-      email,
-      password,
-      profilePicture
-    );
+    const newUser = await authService.signup(username, email, password, profilePicture);
 
-    // 4. Send back the success response with the newly created user
+    // 4. Send back a success response with the newly created user data
     res.status(201).json({
       message: "User created successfully",
       user: newUser,
     });
 
-    logger.info(`User created successfully: ${newUser._id}`); // Log successful signup
+    // Log successful signup with the user ID
+    logger.info(`User created successfully: ${newUser._id}`);
   } catch (err) {
-    logger.error("Error during signup", { error: err.message }); // Log any unexpected errors
-    next(err); // Pass errors to the global error handler middleware
+    // Log any errors during signup
+    logger.error("Error during signup", { error: err.message });
+    // Pass the error to the global error handler middleware
+    next(err);
   }
 };
 
 /**
  * User Login Controller
- * Handles the login process and JWT issuance
+ * Handles the login process and issues a JWT token
+ * @param {Object} req - The request object containing login credentials (email, password)
+ * @param {Object} res - The response object to send back to the client
+ * @param {Function} next - The next middleware function in the Express stack
  */
 exports.login = async (req, res, next) => {
   try {
@@ -51,13 +55,13 @@ exports.login = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       logger.warn("Login validation failed", { errors: errors.array() }); // Log validation failures
-      return res.status(400).json({ errors: errors.array() }); // Return validation errors
+      return res.status(400).json({ errors: errors.array() }); // Return validation errors to the client
     }
 
     // 2. Extract email and password from the request body
     const { email, password } = req.body;
 
-    // 3. Attempt login via the authService
+    // 3. Call the login service to authenticate the user and generate a JWT token
     const token = await authService.login(email, password);
 
     // 4. Check if login was successful and a JWT token was issued
@@ -65,16 +69,20 @@ exports.login = async (req, res, next) => {
       res.json({
         message: "Login successful",
         token, // Send the JWT token back to the client
-        expiresIn: process.env.JWT_EXPIRES_IN || "1h", // Optional: Include token expiry time in the response
+        expiresIn: process.env.JWT_EXPIRES_IN || "1h", // Optional: Include token expiration time
       });
 
-      logger.info(`User logged in: ${email}`); // Log successful login
+      // Log successful login
+      logger.info(`User logged in: ${email}`);
     } else {
-      logger.warn(`Failed login attempt: Invalid credentials for ${email}`); // Log failed login attempt
+      // Log failed login attempt due to invalid credentials
+      logger.warn(`Failed login attempt: Invalid credentials for ${email}`);
       res.status(401).json({ message: "Invalid credentials" }); // 401 Unauthorized for invalid credentials
     }
   } catch (err) {
-    logger.error("Error during login", { error: err.message }); // Log any unexpected errors
-    next(err); // Pass errors to the global error handler middleware
+    // Log any errors during login
+    logger.error("Error during login", { error: err.message });
+    // Pass the error to the global error handler middleware
+    next(err);
   }
 };

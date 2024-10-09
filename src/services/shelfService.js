@@ -9,6 +9,7 @@ const Book = require("../models/Book");    // Import the Book model
 exports.getShelvesByUserId = async (userId) => {
   try {
     // Fetch shelves where the 'userId' matches the provided user ID
+    // Populate the 'books' field in each shelf document
     const shelves = await Shelf.find({ userId }).populate("books");
     return shelves;
   } catch (err) {
@@ -27,13 +28,14 @@ exports.getShelvesByUserId = async (userId) => {
 exports.getShelfById = async (shelfId, userId) => {
   try {
     // Find a shelf that matches both the 'shelfId' and 'userId'
+    // Populate the 'books' field in the shelf document
     const shelf = await Shelf.findOne({ _id: shelfId, userId }).populate("books");
 
     if (!shelf) {
-      throw new Error('Shelf not found or access denied.');
+      throw new Error('Shelf not found or access denied.'); // Custom error message for missing or unauthorized shelf access
     }
 
-    return shelf;
+    return shelf; // Return the found shelf object
   } catch (err) {
     // Log the error (optional: use a logger)
     logger.error(`Error fetching shelf ID ${shelfId} for user ID ${userId}: ${err.message}`);
@@ -48,12 +50,12 @@ exports.getShelfById = async (shelfId, userId) => {
  */
 exports.createShelf = async (shelfData) => {
   try {
-    // Create a new shelf instance with the provided data
+    // Create a new shelf instance using the provided data
     const newShelf = new Shelf(shelfData);
     
     // Save the new shelf to the database
     await newShelf.save();
-    return newShelf;
+    return newShelf; // Return the newly created shelf
   } catch (err) {
     // Log the error (optional: use a logger)
     logger.error(`Error creating new shelf: ${err.message}`);
@@ -71,17 +73,18 @@ exports.createShelf = async (shelfData) => {
 exports.updateShelf = async (shelfId, userId, updateData) => {
   try {
     // Find the shelf by its ID and ensure it belongs to the user, then update it
+    // Return the updated document after modifying it
     const updatedShelf = await Shelf.findOneAndUpdate(
-      { _id: shelfId, userId },  // Ensure only the owner can update the shelf
-      updateData,
-      { new: true }  // Return the updated document
-    ).populate("books");
+      { _id: shelfId, userId },  // Ensure the shelf belongs to the user
+      updateData,                // Apply the updates
+      { new: true }              // Return the updated document
+    ).populate("books");          // Populate the 'books' field with book data
 
     if (!updatedShelf) {
-      throw new Error('Shelf not found or access denied.');
+      throw new Error('Shelf not found or access denied.'); // Custom error for missing or unauthorized shelf update
     }
 
-    return updatedShelf;
+    return updatedShelf; // Return the updated shelf
   } catch (err) {
     // Log the error (optional: use a logger)
     logger.error(`Error updating shelf ID ${shelfId} for user ID ${userId}: ${err.message}`);
@@ -98,16 +101,16 @@ exports.updateShelf = async (shelfId, userId, updateData) => {
 exports.deleteShelf = async (shelfId, userId) => {
   try {
     // Remove the shelf reference from associated books before deleting the shelf
-    await Book.updateMany({ shelf: shelfId }, { $set: { shelf: null } });
+    await Book.updateMany({ shelf: shelfId }, { $set: { shelf: null } }); // Set 'shelf' field to null for associated books
 
     // Find and delete the shelf by its ID and ensure it belongs to the user
-    const deletedShelf = await Shelf.findOneAndDelete({ _id: shelfId, userId });
+    const deletedShelf = await Shelf.findOneAndDelete({ _id: shelfId, userId }); // Delete shelf if owned by the user
 
     if (!deletedShelf) {
-      throw new Error('Shelf not found or access denied.');
+      throw new Error('Shelf not found or access denied.'); // Custom error for unauthorized or non-existent shelf
     }
 
-    return deletedShelf;
+    return deletedShelf; // Return the deleted shelf object
   } catch (err) {
     // Log the error (optional: use a logger)
     logger.error(`Error deleting shelf ID ${shelfId} for user ID ${userId}: ${err.message}`);

@@ -50,6 +50,40 @@ shelfSchema.pre('validate', function(next) {
 });
 
 /**
+ * Static method to add a book to a shelf.
+ * Ensures the book is not already present in the shelf before adding.
+ * @param {String} shelfId - The ID of the shelf to add the book to.
+ * @param {String} bookId - The ID of the book to add to the shelf.
+ */
+shelfSchema.statics.addBookToShelf = async function(shelfId, bookId) {
+  const shelf = await this.findById(shelfId);
+  if (!shelf) throw new Error('Shelf not found.');
+
+  // Check if the book is already in the shelf
+  if (shelf.books.includes(bookId)) {
+    throw new Error('Book is already in the shelf.');
+  }
+
+  // Add the book to the shelf and save
+  shelf.books.push(bookId);
+  return await shelf.save();
+};
+
+/**
+ * Static method to remove a book from a shelf.
+ * @param {String} shelfId - The ID of the shelf to remove the book from.
+ * @param {String} bookId - The ID of the book to remove.
+ */
+shelfSchema.statics.removeBookFromShelf = async function(shelfId, bookId) {
+  const shelf = await this.findById(shelfId);
+  if (!shelf) throw new Error('Shelf not found.');
+
+  // Filter out the book to be removed
+  shelf.books = shelf.books.filter(book => book.toString() !== bookId);
+  return await shelf.save();
+};
+
+/**
  * Export the "Shelf" model.
  * The model is used to create, manage, and query shelf documents in the MongoDB database.
  * The schema is linked to the "User" model (who owns the shelf) and the "Book" model (books on the shelf).

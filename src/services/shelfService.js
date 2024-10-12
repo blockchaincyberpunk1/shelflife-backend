@@ -1,5 +1,5 @@
-const Shelf = require("../models/Shelf");  // Import the Shelf model
-const Book = require("../models/Book");    // Import the Book model
+const Shelf = require("../models/Shelf"); // Import the Shelf model
+const Book = require("../models/Book"); // Import the Book model
 
 /**
  * Fetch all shelves for a specific user
@@ -13,8 +13,6 @@ exports.getShelvesByUserId = async (userId) => {
     const shelves = await Shelf.find({ userId }).populate("books");
     return shelves;
   } catch (err) {
-    // Log the error (optional: use a logger)
-    logger.error(`Error fetching shelves for user ID ${userId}: ${err.message}`);
     throw new Error('Could not fetch shelves for the user.');
   }
 };
@@ -37,8 +35,6 @@ exports.getShelfById = async (shelfId, userId) => {
 
     return shelf; // Return the found shelf object
   } catch (err) {
-    // Log the error (optional: use a logger)
-    logger.error(`Error fetching shelf ID ${shelfId} for user ID ${userId}: ${err.message}`);
     throw new Error('Could not fetch the shelf.');
   }
 };
@@ -57,8 +53,6 @@ exports.createShelf = async (shelfData) => {
     await newShelf.save();
     return newShelf; // Return the newly created shelf
   } catch (err) {
-    // Log the error (optional: use a logger)
-    logger.error(`Error creating new shelf: ${err.message}`);
     throw new Error('Could not create the shelf. Please try again.');
   }
 };
@@ -86,8 +80,6 @@ exports.updateShelf = async (shelfId, userId, updateData) => {
 
     return updatedShelf; // Return the updated shelf
   } catch (err) {
-    // Log the error (optional: use a logger)
-    logger.error(`Error updating shelf ID ${shelfId} for user ID ${userId}: ${err.message}`);
     throw new Error('Could not update the shelf. Please try again.');
   }
 };
@@ -112,8 +104,40 @@ exports.deleteShelf = async (shelfId, userId) => {
 
     return deletedShelf; // Return the deleted shelf object
   } catch (err) {
-    // Log the error (optional: use a logger)
-    logger.error(`Error deleting shelf ID ${shelfId} for user ID ${userId}: ${err.message}`);
     throw new Error('Could not delete the shelf. Please try again.');
+  }
+};
+
+/**
+ * Add a book to a shelf
+ * @param {string} shelfId - The ID of the shelf to add the book to
+ * @param {string} bookId - The ID of the book to add
+ * @param {string} userId - The ID of the user who owns the shelf
+ * @returns {Promise<Object>} - A promise that resolves to the updated shelf
+ */
+exports.addBookToShelf = async (shelfId, bookId, userId) => {
+  try {
+    // Use the Shelf model's static method to add a book to the shelf
+    const updatedShelf = await Shelf.addBookToShelf(shelfId, bookId);
+    return updatedShelf;
+  } catch (err) {
+    throw new Error('Could not add the book to the shelf. Please try again.');
+  }
+};
+
+/**
+ * Remove a book from a shelf
+ * @param {string} shelfId - The ID of the shelf to remove the book from
+ * @param {string} bookId - The ID of the book to remove
+ * @param {string} userId - The ID of the user who owns the shelf
+ * @returns {Promise<Object>} - A promise that resolves to the updated shelf
+ */
+exports.removeBookFromShelf = async (shelfId, bookId, userId) => {
+  try {
+    // Use the Shelf model's static method to remove a book from the shelf
+    const updatedShelf = await Shelf.removeBookFromShelf(shelfId, bookId);
+    return updatedShelf;
+  } catch (err) {
+    throw new Error('Could not remove the book from the shelf. Please try again.');
   }
 };
